@@ -49,6 +49,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 DB_PATH = os.environ.get("QUIZ_DB_PATH", "quizrealm.sqlite3")
 
+
 # --- DATABASE ---
 def get_db():
     conn = sqlite3.connect(DB_PATH, check_same_thread=False)
@@ -123,6 +124,7 @@ def init_db():
 
 init_db()
 
+
 # --- UTILITY FUNCTIONS (JWT/Password) ---
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
@@ -156,6 +158,7 @@ def get_user_by_id(user_id: str):
 
 
 # --- SCHEMA/MODELS ---
+
 # User Models
 class UserOut(BaseModel):
     id: str
