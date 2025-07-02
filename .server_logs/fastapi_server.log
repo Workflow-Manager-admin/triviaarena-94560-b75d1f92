@@ -51,8 +51,8 @@ Traceback (most recent call last):
   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
   File "/home/kavia/workspace/code-generation/triviaarena-94560-b75d1f92/quiz_realm_backend/src/api/main.py", line 4, in <module>
     from .routers import quiz_check
-  File "/home/kavia/workspace/code-generation/triviaarena-94560-b75d1f92/quiz_realm_backend/src/api/routers/__init__.py", line 2, in <module>
-    from . import rooms
-  File "/home/kavia/workspace/code-generation/triviaarena-94560-b75d1f92/quiz_realm_backend/src/api/routers/rooms.py", line 2, in <module>
+  File "/home/kavia/workspace/code-generation/triviaarena-94560-b75d1f92/quiz_realm_backend/src/api/routers/__init__.py", line 1, in <module>
+    from . import quiz_check
+  File "/home/kavia/workspace/code-generation/triviaarena-94560-b75d1f92/quiz_realm_backend/src/api/routers/quiz_check.py", line 2, in <module>
     from sqlmodel import Session, select
 ModuleNotFoundError: No module named 'sqlmodel'

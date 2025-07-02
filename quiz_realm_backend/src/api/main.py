@@ -30,8 +30,8 @@ def setup_app() -> FastAPI:
     init_db()
 
     # Include routers from modular structure
-    app.include_router(quiz_check.router, prefix="")
-    app.include_router(auth.router, prefix="")  # Add authentication endpoints
+    app.include_router(quiz_check.router)
+    app.include_router(auth.router)
     app.include_router(rooms.router)
     app.include_router(questions.router)
     app.include_router(responses.router)
