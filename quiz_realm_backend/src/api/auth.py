@@ -73,19 +73,33 @@ class UserOut(BaseModel):
 def signup(payload: SignupRequest, session: Session = Depends(get_session)):
     """
     Register a new user. Username and email must be unique. Password is securely hashed.
+
+    Error handling included for database integrity and runtime errors to avoid silent 500s.
     """
-    # Check for username or email collision
-    if session.exec(select(User).where(User.username == payload.username)).first():
-        raise HTTPException(status_code=400, detail="Username already registered")
-    if session.exec(select(User).where(User.email == payload.email)).first():
-        raise HTTPException(status_code=400, detail="Email already registered")
-    # Hash and create user
-    hashed_pw = get_password_hash(payload.password)
-    user = User(username=payload.username, email=payload.email, hashed_password=hashed_pw)
-    session.add(user)
-    session.commit()
-    session.refresh(user)
-    return UserOut.model_validate(user)
+    try:
+        # Check for username or email collision
+        if session.exec(select(User).where(User.username == payload.username)).first():
+            raise HTTPException(status_code=400, detail="Username already registered")
+        if session.exec(select(User).where(User.email == payload.email)).first():
+            raise HTTPException(status_code=400, detail="Email already registered")
+        # Hash and create user
+        hashed_pw = get_password_hash(payload.password)
+        user = User(username=payload.username, email=payload.email, hashed_password=hashed_pw)
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+        return UserOut.model_validate(user)
+    except HTTPException:
+        raise
+    except Exception as ex:
+        # Log error details for diagnosis
+        import traceback
+        print("Exception during user signup:", ex)
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error during signup. Please contact support if this persists."
+        )
 
 # PUBLIC_INTERFACE
 @router.post("/login", response_model=Token, summary="User login and JWT token issuing")
@@ -93,13 +107,26 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Session = D
     """
     Authenticate user with username/email and password.
     Returns a JWT access token on successful login.
+
+    Error handling included for unexpected authentication errors (logs traceback server-side).
     """
-    user = get_user_by_username_or_email(session, form_data.username)
-    if not user or not verify_password(form_data.password, user.hashed_password):
-        raise HTTPException(status_code=401, detail="Incorrect username/email or password")
-    token_data = {"sub": user.username, "uid": user.id}
-    access_token = create_access_token(token_data)
-    return Token(access_token=access_token)
+    try:
+        user = get_user_by_username_or_email(session, form_data.username)
+        if not user or not verify_password(form_data.password, user.hashed_password):
+            raise HTTPException(status_code=401, detail="Incorrect username/email or password")
+        token_data = {"sub": user.username, "uid": user.id}
+        access_token = create_access_token(token_data)
+        return Token(access_token=access_token)
+    except HTTPException:
+        raise
+    except Exception as ex:
+        import traceback
+        print("Exception during login:", ex)
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error during login. Please contact support if this persists."
+        )
 
 ####### JWT Authentication Dependency #######
 
