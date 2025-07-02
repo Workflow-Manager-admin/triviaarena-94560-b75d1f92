@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .routers import quiz_check
 from .database import init_db
 from . import auth
+from .routers import rooms, questions, responses, leaderboard, dashboard
 
 def setup_app() -> FastAPI:
     """
@@ -30,6 +31,11 @@ def setup_app() -> FastAPI:
     # Include routers from modular structure
     app.include_router(quiz_check.router, prefix="")
     app.include_router(auth.router, prefix="")  # Add authentication endpoints
+    app.include_router(rooms.router)
+    app.include_router(questions.router)
+    app.include_router(responses.router)
+    app.include_router(leaderboard.router)
+    app.include_router(dashboard.router)
 
     return app
 
