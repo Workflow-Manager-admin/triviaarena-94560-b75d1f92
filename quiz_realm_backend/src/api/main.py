@@ -5,6 +5,7 @@ from .routers import quiz_check
 from .database import init_db
 from . import auth
 from .routers import rooms, questions, responses, leaderboard, dashboard
+from .routers import websocket as websocket_router
 
 def setup_app() -> FastAPI:
     """
@@ -37,6 +38,8 @@ def setup_app() -> FastAPI:
     app.include_router(leaderboard.router)
     app.include_router(dashboard.router)
 
+    # --- WebSocket endpoint wiring ---
+    app.include_router(websocket_router.router)
     return app
 
 app = setup_app()
