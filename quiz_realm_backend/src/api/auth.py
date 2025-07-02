@@ -75,27 +75,46 @@ def signup(payload: SignupRequest, session: Session = Depends(get_session)):
     Register a new user. Username and email must be unique. Password is securely hashed.
 
     Error handling included for database integrity and runtime errors to avoid silent 500s.
+    All exceptions and tracebacks will be explicitly printed to the terminal for deeper diagnosis.
     """
+    import sys
+    import traceback
     try:
-        # Check for username or email collision
-        if session.exec(select(User).where(User.username == payload.username)).first():
-            raise HTTPException(status_code=400, detail="Username already registered")
-        if session.exec(select(User).where(User.email == payload.email)).first():
-            raise HTTPException(status_code=400, detail="Email already registered")
-        # Hash and create user
-        hashed_pw = get_password_hash(payload.password)
-        user = User(username=payload.username, email=payload.email, hashed_password=hashed_pw)
-        session.add(user)
-        session.commit()
-        session.refresh(user)
-        return UserOut.model_validate(user)
-    except HTTPException:
-        raise
-    except Exception as ex:
-        # Log error details for diagnosis
-        import traceback
-        print("Exception during user signup:", ex)
+        # Extra try/except at user level for FULL TRACE debug, on all entry and exit
+        try:
+            # Check for username or email collision
+            if session.exec(select(User).where(User.username == payload.username)).first():
+                raise HTTPException(status_code=400, detail="Username already registered")
+            if session.exec(select(User).where(User.email == payload.email)).first():
+                raise HTTPException(status_code=400, detail="Email already registered")
+            # Hash and create user
+            hashed_pw = get_password_hash(payload.password)
+            user = User(username=payload.username, email=payload.email, hashed_password=hashed_pw)
+            session.add(user)
+            try:
+                session.commit()
+                session.refresh(user)
+            except Exception as db_ex:
+                print("[DB ERROR in signup commit/refresh]:", repr(db_ex), file=sys.stderr)
+                traceback.print_exc()
+                # If SQLModel/Integrity errors, escalate as 400/409 if known; else generic 500.
+                from sqlmodel.exc import SQLAlchemyError
+                if isinstance(db_ex, SQLAlchemyError):
+                    raise HTTPException(status_code=400, detail="Database error during signup. Likely integrity or format issue.")
+                raise  # unhandled, print + rethrow
+            return UserOut.model_validate(user)
+        except HTTPException as hex:
+            print("[HTTPException in signup]:", repr(hex), file=sys.stderr)
+            traceback.print_exc()
+            raise
+        except Exception as ex:
+            print("[Exception in signup handler (outer except)]:", repr(ex), file=sys.stderr)
+            traceback.print_exc()
+            raise
+    except Exception as ex2:
+        print("[FATAL EXCEPTION in /signup route]:", repr(ex2), file=sys.stderr)
         traceback.print_exc()
+        # Always emit a sanitized HTTP error for user
         raise HTTPException(
             status_code=500,
             detail="Internal server error during signup. Please contact support if this persists."

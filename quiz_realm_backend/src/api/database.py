@@ -32,9 +32,22 @@ def get_session() -> Generator[Session, None, None]:
         async def endpoint(..., session: Session = Depends(get_session)):
             ...
     Ensures proper closing of resources.
+    Prints all exceptions and tracebacks if session fails to open or context errors occur.
     """
-    with Session(engine) as session:
-        yield session
+    import sys
+    import traceback
+    try:
+        with Session(engine) as session:
+            try:
+                yield session
+            except Exception as in_session_ex:
+                print("[Exception inside DB session generator context]:", repr(in_session_ex), file=sys.stderr)
+                traceback.print_exc()
+                raise
+    except Exception as sess_ex:
+        print("[Exception opening DB session]:", repr(sess_ex), file=sys.stderr)
+        traceback.print_exc()
+        raise
 
 # PUBLIC_INTERFACE
 @contextmanager
@@ -45,6 +58,19 @@ def session_context() -> Generator[Session, None, None]:
     Usage:
         with session_context() as session:
             # use session
+    Prints all exceptions and tracebacks if DB session fails to open or exits with errors.
     """
-    with Session(engine) as session:
-        yield session
+    import sys
+    import traceback
+    try:
+        with Session(engine) as session:
+            try:
+                yield session
+            except Exception as in_ctx_ex:
+                print("[Exception inside session_context()]:", repr(in_ctx_ex), file=sys.stderr)
+                traceback.print_exc()
+                raise
+    except Exception as ctx_ex:
+        print("[Exception opening session_context()]:", repr(ctx_ex), file=sys.stderr)
+        traceback.print_exc()
+        raise
