@@ -1,0 +1,4 @@
+{
+    "command": "pytest",
+    "working_directory": "/home/kavia/workspace/code-generation/triviaarena-94560-b75d1f92/quiz_realm_backend"
+}
