@@ -2,16 +2,28 @@ import os
 from typing import Generator
 from sqlmodel import SQLModel, create_engine, Session
 from contextlib import contextmanager
+import sys
 
 # Load DATABASE_URL from environment or default to SQLite file
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./quizrealm.db")
 
+# Diagnostic print for startup
+print(f"[INFO] Using DATABASE_URL: {DATABASE_URL}", file=sys.stderr)
+if not DATABASE_URL.startswith("sqlite"):
+    print("[WARNING] Currently only SQLite is fully supported and tested. Your DATABASE_URL is set to:", DATABASE_URL, file=sys.stderr)
+
 # Use check_same_thread=False for SQLite if multi-threaded app (e.g., FastAPI with uvicorn)
-engine = create_engine(
-    DATABASE_URL,
-    echo=True,
-    connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {},
-)
+try:
+    engine = create_engine(
+        DATABASE_URL,
+        echo=True,
+        connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {},
+    )
+except Exception:
+    print("[FATAL] Error creating SQLModel engine with DATABASE_URL:", DATABASE_URL, file=sys.stderr)
+    import traceback
+    traceback.print_exc()
+    raise
 
 # PUBLIC_INTERFACE
 def init_db():
