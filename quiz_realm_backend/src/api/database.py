@@ -7,6 +7,11 @@ import sys
 # Load DATABASE_URL from environment or default to SQLite file
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./quizrealm.db")
 
+# Ensure correct working directory for relative SQLite path if running via preview
+if DATABASE_URL.startswith("sqlite:///./"):
+    abs_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../", DATABASE_URL.replace("sqlite:///./", "")))
+    DATABASE_URL = f"sqlite:///{abs_path}"
+
 # Diagnostic print for startup
 print(f"[INFO] Using DATABASE_URL: {DATABASE_URL}", file=sys.stderr)
 if not DATABASE_URL.startswith("sqlite"):
